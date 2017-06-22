@@ -8,6 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"gopkg.in/gin-gonic/gin.v1"
 	"ios-go/conf"
+	"strings"
 	"time"
 )
 
@@ -72,7 +73,15 @@ func CORS() gin.HandlerFunc {
 
 func JWTMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tokenString := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0OTgxMDM2MTUsIm1haWwiOiJzb2dvbmd5dUAxNjMuY29tIiwibmFtZSI6Inpob3VnYW5nIn0.LxdLyTSlxZpVGT5ManFrurFw9keeeWZwfv3JyJS0NXk"
+		//if has token
+		authString := c.Request.Header.Get("Authorization")
+		if len(authString) == 0 {
+			c.JSON(401, gin.H{"code": 401, "msg": "invalid token"})
+			c.AbortWithStatus(401)
+			return
+		}
+		//confirm token
+		tokenString := strings.Replace(authString, "Bearer ", "", -1)
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
@@ -84,8 +93,8 @@ func JWTMiddleware() gin.HandlerFunc {
 		if token.Valid {
 			c.Next()
 		} else {
-			c.JSON(200, gin.H{"code": 401, "msg": err.Error()})
-			c.AbortWithStatus(200)
+			c.JSON(401, gin.H{"code": 401, "msg": err.Error()})
+			c.AbortWithStatus(401)
 		}
 	}
 }
