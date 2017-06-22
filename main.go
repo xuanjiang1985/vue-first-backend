@@ -1,8 +1,25 @@
 package main
 
 import (
+	"fmt"
+	seelog "github.com/cihub/seelog"
+	"github.com/dgrijalva/jwt-go"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 	"gopkg.in/gin-gonic/gin.v1"
+	"ios-go/conf"
+	"time"
 )
+
+var sqlconn string = conf.Conn
+var logger = conf.Logger
+var hmacSampleSecret = []byte("wang ba da 211")
+
+type Messages struct {
+	Id         int    `json:"id"`
+	Content    string `json:"content"`
+	Created_at string `json:"created_at"`
+}
 
 type BookStruct struct {
 	Num   int     `json:"num"`
@@ -25,6 +42,14 @@ func main() {
 		profile := Profile{"wenjuan", 28, 0, BookStruct{10, "Plan B", 34.21}}
 		c.JSON(200, profile)
 	})
+	r.POST("/msg", PostMsg)
+	r.GET("/msg", GetMsg)
+	r.GET("/token", GetToken)
+	v1 := r.Group("/v1")
+	v1.Use(JWTMiddleware())
+	{
+		v1.GET("/test", JustTest)
+	}
 	r.Run(":8080")
 }
 
@@ -43,4 +68,104 @@ func CORS() gin.HandlerFunc {
 			context.Next()
 		}
 	}
+}
+
+func JWTMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tokenString := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0OTgzNTg0NzUsIm1haWwiOiJzb2dvbmd5dUAxNjMuY29tIiwibmFtZSI6Inpob3VnYW5nIn0.tuBfzrIp4fiwBrLsJG-zfnVBIt9zlU0iqayTbniodbc"
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			}
+
+			// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
+			return hmacSampleSecret, nil
+		})
+		if token.Valid {
+			c.Next()
+		} else {
+			c.AbortWithError(401, err)
+		}
+	}
+}
+
+func PostMsg(c *gin.Context) {
+	//开启日志
+	seelog.ReplaceLogger(logger)
+	defer seelog.Flush()
+	//数据库连接
+	db, err := sqlx.Connect("mysql", sqlconn)
+	if err != nil {
+		seelog.Error("can't connect db ", err)
+		return
+	}
+	defer db.Close()
+
+	type Data struct {
+		Content string `form:"content" json:"content" binding:"required"`
+	}
+	var data Data
+	if c.Bind(&data) != nil {
+		c.JSON(200, gin.H{
+			"error":  "内容不能为空",
+			"status": 0,
+		})
+		return
+	}
+	_, err = db.Exec(`INSERT INTO messages (content) VALUES (?)`, data.Content)
+	if err != nil {
+		c.JSON(200, gin.H{
+			"error":  err.Error(),
+			"status": 0,
+		})
+		return
+	}
+	c.JSON(200, gin.H{
+		"status": 1,
+	})
+}
+
+func GetMsg(c *gin.Context) {
+	//开启日志
+	seelog.ReplaceLogger(logger)
+	defer seelog.Flush()
+	//数据库连接
+	db, err := sqlx.Connect("mysql", sqlconn)
+	if err != nil {
+		seelog.Error("can't connect db ", err)
+		return
+	}
+	defer db.Close()
+	var msg []Messages
+	skip := c.Query("skip")
+	err = db.Select(&msg, "SELECT * FROM messages ORDER BY id DESC LIMIT ?,10", skip)
+	if err != nil {
+		seelog.Error("can't read db ", err)
+		c.JSON(200, gin.H{
+			"error":  err.Error(),
+			"status": 0,
+		})
+		return
+	}
+	c.JSON(200, gin.H{
+		"status": 1,
+		"data":   msg,
+	})
+}
+
+func GetToken(c *gin.Context) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"name": "zhougang",
+		"mail": "sogongyu@163.com",
+		"exp":  time.Now().Add(time.Hour * 72).Unix(),
+	})
+	tokenString, err := token.SignedString(hmacSampleSecret)
+	if err != nil {
+		c.JSON(200, gin.H{"code": 500, "msg": "Server error!"})
+	}
+	c.JSON(200, gin.H{"code": 200, "msg": "ok", "jwt": tokenString})
+}
+
+func JustTest(c *gin.Context) {
+	c.JSON(200, gin.H{"code": 200, "msg": "ok, I am passed via jwt token"})
 }
