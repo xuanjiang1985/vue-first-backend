@@ -72,7 +72,7 @@ func CORS() gin.HandlerFunc {
 
 func JWTMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tokenString := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0OTgzNTg0NzUsIm1haWwiOiJzb2dvbmd5dUAxNjMuY29tIiwibmFtZSI6Inpob3VnYW5nIn0.tuBfzrIp4fiwBrLsJG-zfnVBIt9zlU0iqayTbniodbc"
+		tokenString := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0OTgxMDM2MTUsIm1haWwiOiJzb2dvbmd5dUAxNjMuY29tIiwibmFtZSI6Inpob3VnYW5nIn0.LxdLyTSlxZpVGT5ManFrurFw9keeeWZwfv3JyJS0NXk"
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
@@ -84,7 +84,8 @@ func JWTMiddleware() gin.HandlerFunc {
 		if token.Valid {
 			c.Next()
 		} else {
-			c.AbortWithError(401, err)
+			c.JSON(200, gin.H{"code": 401, "msg": err.Error()})
+			c.AbortWithStatus(200)
 		}
 	}
 }
@@ -157,7 +158,7 @@ func GetToken(c *gin.Context) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"name": "zhougang",
 		"mail": "sogongyu@163.com",
-		"exp":  time.Now().Add(time.Hour * 72).Unix(),
+		"exp":  time.Now().Add(time.Second * 20).Unix(),
 	})
 	tokenString, err := token.SignedString(hmacSampleSecret)
 	if err != nil {
