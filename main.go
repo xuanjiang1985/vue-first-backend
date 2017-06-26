@@ -19,6 +19,7 @@ func main() {
 	r.GET("/msg", controllers.GetMsg)
 	r.POST("/login", controllers.PostLogin)
 	r.POST("/register", controllers.PostRegister)
+	r.GET("/refreshToken", controllers.GetRefreshToken)
 	//jwt auth group
 	v1 := r.Group("/v1")
 	v1.Use(JWTMiddleware())

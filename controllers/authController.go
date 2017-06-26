@@ -189,7 +189,7 @@ func GetChangeName(c *gin.Context) {
 func getToken(user Users) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id":  user.Id,
-		"exp": time.Now().Add(time.Second * 3600).Unix(),
+		"exp": time.Now().Add(time.Hour * 2).Unix(),
 	})
 	tokenString, _ := token.SignedString(hmacSampleSecret)
 	return tokenString
@@ -198,8 +198,21 @@ func getToken(user Users) string {
 func getToken2(a int) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id":  a,
-		"exp": time.Now().Add(time.Second * 3600).Unix(),
+		"exp": time.Now().Add(time.Hour * 2).Unix(),
 	})
 	tokenString, _ := token.SignedString(hmacSampleSecret)
 	return tokenString
+}
+
+func GetRefreshToken(c *gin.Context) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"id":  c.Query("id"),
+		"exp": time.Now().Add(time.Hour * 2).Unix(),
+	})
+	tokenString, _ := token.SignedString(hmacSampleSecret)
+	c.JSON(200, gin.H{
+		"code":  200,
+		"msg":   "刷新成功",
+		"token": tokenString,
+	})
 }
