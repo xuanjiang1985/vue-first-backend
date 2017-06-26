@@ -2,54 +2,28 @@ package main
 
 import (
 	"fmt"
-	seelog "github.com/cihub/seelog"
 	"github.com/dgrijalva/jwt-go"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
 	"gopkg.in/gin-gonic/gin.v1"
 	"ios-go/conf"
+	"ios-go/controllers"
 	"strings"
-	"time"
 )
 
-var sqlconn string = conf.Conn
-var logger = conf.Logger
-var hmacSampleSecret = []byte("wang ba da 211")
-
-type Messages struct {
-	Id         int    `json:"id"`
-	Content    string `json:"content"`
-	Created_at string `json:"created_at"`
-}
-
-type BookStruct struct {
-	Num   int     `json:"num"`
-	Name  string  `json:"name"`
-	Price float64 `json:"price"`
-}
-
-type Profile struct {
-	Wife string     `json:"wife"`
-	Age  int        `json:"age"`
-	Sex  int        `json:"sex"`
-	Book BookStruct `json:"book"`
-}
+var hmacSampleSecret = []byte(conf.JwtKey)
 
 func main() {
 	r := gin.Default()
 	r.Use(CORS())
 	r.Static("/public", "./public")
-	r.GET("/test", func(c *gin.Context) {
-		profile := Profile{"wenjuan", 28, 0, BookStruct{10, "Plan B", 34.21}}
-		c.JSON(200, profile)
-	})
-	r.POST("/msg", PostMsg)
-	r.GET("/msg", GetMsg)
-	r.GET("/token", GetToken)
+	r.POST("/msg", controllers.PostMsg)
+	r.GET("/msg", controllers.GetMsg)
+	r.POST("/login", controllers.PostLogin)
+	r.POST("/register", controllers.PostRegister)
+	//jwt auth group
 	v1 := r.Group("/v1")
 	v1.Use(JWTMiddleware())
 	{
-		v1.GET("/test", JustTest)
+		v1.GET("/change-name", controllers.GetChangeName)
 	}
 	r.Run(":8080")
 }
@@ -97,85 +71,4 @@ func JWTMiddleware() gin.HandlerFunc {
 			c.AbortWithStatus(401)
 		}
 	}
-}
-
-func PostMsg(c *gin.Context) {
-	//开启日志
-	seelog.ReplaceLogger(logger)
-	defer seelog.Flush()
-	//数据库连接
-	db, err := sqlx.Connect("mysql", sqlconn)
-	if err != nil {
-		seelog.Error("can't connect db ", err)
-		return
-	}
-	defer db.Close()
-
-	type Data struct {
-		Content string `form:"content" json:"content" binding:"required"`
-	}
-	var data Data
-	if c.Bind(&data) != nil {
-		c.JSON(200, gin.H{
-			"error":  "内容不能为空",
-			"status": 0,
-		})
-		return
-	}
-	_, err = db.Exec(`INSERT INTO messages (content) VALUES (?)`, data.Content)
-	if err != nil {
-		c.JSON(200, gin.H{
-			"error":  err.Error(),
-			"status": 0,
-		})
-		return
-	}
-	c.JSON(200, gin.H{
-		"status": 1,
-	})
-}
-
-func GetMsg(c *gin.Context) {
-	//开启日志
-	seelog.ReplaceLogger(logger)
-	defer seelog.Flush()
-	//数据库连接
-	db, err := sqlx.Connect("mysql", sqlconn)
-	if err != nil {
-		seelog.Error("can't connect db ", err)
-		return
-	}
-	defer db.Close()
-	var msg []Messages
-	skip := c.Query("skip")
-	err = db.Select(&msg, "SELECT * FROM messages ORDER BY id DESC LIMIT ?,10", skip)
-	if err != nil {
-		seelog.Error("can't read db ", err)
-		c.JSON(200, gin.H{
-			"error":  err.Error(),
-			"status": 0,
-		})
-		return
-	}
-	c.JSON(200, gin.H{
-		"status": 1,
-		"data":   msg,
-	})
-}
-
-func GetToken(c *gin.Context) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"name": "zhougang",
-		"mail": "sogongyu@163.com",
-		"exp":  time.Now().Add(time.Second * 20).Unix(),
-	})
-	tokenString, err := token.SignedString(hmacSampleSecret)
-	if err != nil {
-		c.JSON(200, gin.H{"code": 500, "msg": "Server error!"})
-	}
-	c.JSON(200, gin.H{"code": 200, "msg": "ok", "jwt": tokenString})
-}
-
-func JustTest(c *gin.Context) {
-	c.JSON(200, gin.H{"code": 200, "msg": "ok, I am passed via jwt token"})
 }

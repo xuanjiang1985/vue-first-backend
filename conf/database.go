@@ -7,6 +7,7 @@ import (
 )
 
 var Conn string
+var JwtKey string
 
 //var basePath = os.Getenv("GOPATH")
 
@@ -22,5 +23,7 @@ func init() {
 	host, _ := conf.GetString("mysql", "host")
 	port, _ := conf.GetString("mysql", "port")
 	db, _ := conf.GetString("mysql", "db")
+	jwtkey, _ := conf.GetString("jwt", "jwtkey")
 	Conn = user + ":" + password + "@tcp(" + host + ":" + port + ")/" + db
+	JwtKey = jwtkey
 }
