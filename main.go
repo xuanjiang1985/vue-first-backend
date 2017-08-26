@@ -24,9 +24,10 @@ func main() {
 	v1 := r.Group("/v1")
 	v1.Use(JWTMiddleware())
 	{
+		v1.GET("/profile", controllers.GetProfile)
 		v1.GET("/change-name", controllers.GetChangeName)
 	}
-	r.Run(":8080")
+	r.Run(":8081")
 }
 
 func CORS() gin.HandlerFunc {

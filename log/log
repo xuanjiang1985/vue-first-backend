@@ -21,3 +21,5 @@
 2017-06-05 10:47:27 [ERR] [controller/indexController.go:54] can't read db missing destination name sex in *[]ctrl.ArticlesUser
 2017-06-05 10:48:28 [ERR] [controller/indexController.go:54] can't read db sql: Scan error on column index 7: converting driver.Value type <nil> ("<nil>") to a int: invalid syntax
 2017-06-18 23:41:53 [ERR] [main.go:118] can't read db expected slice but got struct
+2017-08-23 20:47:09 [ERR] [controllers/msgController.go:55] can't connect db dial tcp 127.0.0.1:3306: getsockopt: connection refused
+2017-08-23 20:49:13 [ERR] [controllers/msgController.go:55] can't connect db dial tcp 127.0.0.1:3306: getsockopt: connection refused

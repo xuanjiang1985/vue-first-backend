@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	//"bytes"
+	"encoding/json"
 	valid "github.com/asaskevich/govalidator"
 	seelog "github.com/cihub/seelog"
 	"github.com/dgrijalva/jwt-go"
@@ -8,7 +10,9 @@ import (
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/gin-gonic/gin.v1"
+	"io/ioutil"
 	"ios-go/conf"
+	//"log"
 	"time"
 )
 
@@ -16,15 +20,51 @@ var sqlconn = conf.Conn
 var logger = conf.Logger
 var hmacSampleSecret = []byte(conf.JwtKey)
 
+func GetProfile(c *gin.Context) {
+	//开启日志
+	seelog.ReplaceLogger(logger)
+	defer seelog.Flush()
+	//数据库连接
+	db, err := sqlx.Connect("mysql", sqlconn)
+	if err != nil {
+		seelog.Error("can't connect db ", err)
+		return
+	}
+	defer db.Close()
+	//get login user profile
+	var authUser Users
+	err = db.Get(&authUser, "SELECT * FROM users WHERE id=?", c.Query("id"))
+	if err != nil {
+		c.JSON(200, gin.H{
+			"code": 403,
+			"msg":  "未知用户",
+		})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"code":       200,
+		"msg":        "获取成功",
+		"userName":   authUser.Name,
+		"userHeader": authUser.Header,
+		"userId":     authUser.Id,
+		"created_at": authUser.Created_at,
+	})
+
+}
 func PostLogin(c *gin.Context) {
 	//validate
 	type Validator struct {
 		Phone    string `valid:"required~手机不能为空,int~手机必须是数字,stringlength(11|11)~手机必须为11位"`
 		Password string `valid:"required~密码不能为空,stringlength(6|60)~密码至少6位"`
 	}
+	var userInfo map[string]string
+	result, _ := ioutil.ReadAll(c.Request.Body)
+	json.Unmarshal(result, &userInfo)
+	//log.Println(userInfo)
 	data := &Validator{
-		Phone:    c.PostForm("phone"),
-		Password: c.PostForm("password"),
+		Phone:    userInfo["phone"],
+		Password: userInfo["password"],
 	}
 
 	_, err := valid.ValidateStruct(data)
@@ -48,8 +88,8 @@ func PostLogin(c *gin.Context) {
 
 	//get login user
 	var authUser Users
-	password := []byte(c.PostForm("password"))
-	err = db.Get(&authUser, "SELECT * FROM users WHERE phone=?", c.PostForm("phone"))
+	password := []byte(userInfo["password"])
+	err = db.Get(&authUser, "SELECT * FROM users WHERE phone=?", userInfo["phone"])
 	if err != nil {
 		c.JSON(200, gin.H{
 			"code": 403,
@@ -189,7 +229,7 @@ func GetChangeName(c *gin.Context) {
 func getToken(user Users) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id":  user.Id,
-		"exp": time.Now().Add(time.Hour * 2).Unix(),
+		"exp": time.Now().Add(time.Hour * 168).Unix(),
 	})
 	tokenString, _ := token.SignedString(hmacSampleSecret)
 	return tokenString
