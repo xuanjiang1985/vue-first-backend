@@ -13,7 +13,7 @@ var JwtKey string
 
 //初始化数据库配置
 func init() {
-	conf, err := goconf.ReadConfigFile(basePath + "/src/ios-go/.env")
+	conf, err := goconf.ReadConfigFile(basePath + "/src/vue-first-backend/.env")
 	if err != nil {
 		log.Println(err)
 		return
