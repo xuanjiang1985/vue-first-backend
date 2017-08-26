@@ -11,7 +11,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/gin-gonic/gin.v1"
 	"io/ioutil"
-	"ios-go/conf"
+	"vue-first-backend/conf"
 	//"log"
 	"time"
 )

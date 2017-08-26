@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/DavidHuie/gomigrate"
 	_ "github.com/go-sql-driver/mysql"
-	"ios-go/conf"
+	"vue-first-backend/conf"
 )
 
 var sqlconn string = conf.Conn

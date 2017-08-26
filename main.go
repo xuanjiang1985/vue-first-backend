@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"gopkg.in/gin-gonic/gin.v1"
-	"ios-go/conf"
-	"ios-go/controllers"
 	"strings"
+	"vue-first-backend/conf"
+	"vue-first-backend/controllers"
 )
 
 var hmacSampleSecret = []byte(conf.JwtKey)
