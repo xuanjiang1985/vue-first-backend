@@ -27,7 +27,7 @@ func main() {
 		v1.GET("/profile", controllers.GetProfile)
 		v1.GET("/change-name", controllers.GetChangeName)
 	}
-	r.Run(":8081")
+	r.Run(":8082")
 }
 
 func CORS() gin.HandlerFunc {
