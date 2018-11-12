@@ -66,8 +66,10 @@ func GetMsg(c *gin.Context) {
 		})
 		return
 	}
+	seelog.Info("获取成功")
 	c.JSON(200, gin.H{
 		"code": 200,
 		"data": msg,
+		"msg":  "操作成功",
 	})
 }

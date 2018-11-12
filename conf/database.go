@@ -3,17 +3,14 @@ package conf
 import (
 	"github.com/dlintw/goconf"
 	"log"
-	//"os"
 )
 
 var Conn string
 var JwtKey string
 
-//var basePath = os.Getenv("GOPATH")
-
 //初始化数据库配置
 func init() {
-	conf, err := goconf.ReadConfigFile(basePath + "/src/vue-first-backend/.env")
+	conf, err := goconf.ReadConfigFile("conf/.env")
 	if err != nil {
 		log.Println(err)
 		return

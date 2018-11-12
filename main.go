@@ -14,7 +14,6 @@ var hmacSampleSecret = []byte(conf.JwtKey)
 func main() {
 	r := gin.Default()
 	r.Use(CORS())
-	r.Static("/public", "./public")
 	r.POST("/msg", controllers.PostMsg)
 	r.GET("/msg", controllers.GetMsg)
 	r.POST("/login", controllers.PostLogin)
